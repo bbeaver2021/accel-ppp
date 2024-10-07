@@ -115,9 +115,9 @@ static int vlan_pt_recv(struct sk_buff *skb, struct net_device *dev, struct pack
 		goto out;
 
     if (skb->protocol == htons(ETH_P_IP)) {
-        struct iphdr *ip_header = ip_hdr(skb);
+        struct iphdr *ip_header = (struct iphdr *)skb_network_header(skb);
         if(ip_header->protocol == IPPROTO_UDP) {
-            struct udphdr *udp_header = udp_hdr(skb);
+            struct udphdr *udp_header = (struct udphdr *)(skb->data+sizeof(struct iphdr));
             if(udp_header->dest == htons(67)) {
                 proto = VLAN_MON_PROTO_IP;
             }
