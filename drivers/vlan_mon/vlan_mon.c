@@ -17,6 +17,9 @@
 #include <net/net_namespace.h>
 #include <net/netns/generic.h>
 
+#include <linux/ip.h>
+#include <linux/udp.h>
+
 #include "vlan_mon.h"
 #include "version.h"
 
@@ -111,8 +114,20 @@ static int vlan_pt_recv(struct sk_buff *skb, struct net_device *dev, struct pack
 	if (!vlan_tx_tag_present(skb))
 		goto out;
 
-	if (skb->protocol == htons(ETH_P_IP) || skb->protocol == htons(ETH_P_ARP))
-		proto = VLAN_MON_PROTO_IP;
+    if (skb->protocol == htons(ETH_P_IP)) {
+        struct iphdr *ip_header = ip_hdr(skb);
+        if(ip_header->protocol == IPPROTO_UDP) {
+            struct udphdr *udp_header = udp_hdr(skb);
+            if(udp_header->dest == htons(67)) {
+                proto = VLAN_MON_PROTO_IP;
+            }
+            else {
+                goto out;
+            }
+        } else {
+            goto out;
+        }
+    }
 	//else if (skb->protocol == htons(ETH_P_IPV6))
 	//	proto = VLAN_MON_PROTO_IP6;
 	else if (skb->protocol == htons(ETH_P_PPP_DISC))
