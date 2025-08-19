@@ -153,6 +153,7 @@ static int conf_l4_redirect_table;
 static int conf_l4_redirect_on_reject;
 static const char *conf_l4_redirect_ipset;
 static int conf_vlan_timeout = 60;
+static int conf_vlan_timeout_max = 90;
 static int conf_max_request = 3;
 static int conf_session_timeout;
 static int conf_idle_timeout;
@@ -2789,8 +2790,10 @@ static int get_offer_delay()
 static void set_vlan_timeout(struct ipoe_serv *serv)
 {
 	if(conf_vlan_timeout) {
+		int rand_vlan_timeout = conf_vlan_timeout + rand() % (conf_vlan_timeout_max - conf_vlan_timeout + 1);
+
 		serv->timer.expire = ipoe_serv_timeout;
-		serv->timer.expire_tv.tv_sec = conf_vlan_timeout;
+		serv->timer.expire_tv.tv_sec = rand_vlan_timeout;
 
 		if (list_empty(&serv->sessions))
 			triton_timer_add(&serv->ctx, &serv->timer, 0);
@@ -4061,6 +4064,11 @@ static void load_config(void)
 	if (opt && atoi(opt) >= 0)
 		conf_vlan_timeout = atoi(opt);
 
+	opt = conf_get_opt("ipoe", "vlan-timeout-max");
+	if (opt && atoi(opt) >= 0)
+		conf_vlan_timeout_max = atoi(opt);
+
+	opt = conf_get_opt("ipoe", "offer-timeout");
 	opt = conf_get_opt("ipoe", "offer-timeout");
 	if (opt && atoi(opt) > 0)
 		conf_offer_timeout = atoi(opt);
